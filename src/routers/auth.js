@@ -4,6 +4,8 @@ import { validateBody } from '../middlewares/validateBody.js';
 import {
   loginUserController,
   registerUserController,
+  logoutUserController,
+  refreshUserSessionController,
 } from '../controllers/auth.js';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 
@@ -21,4 +23,7 @@ router.post(
   ctrlWrapper(loginUserController),
 );
 
+router.post('/logout', ctrlWrapper(logoutUserController));
+
+router.post('/refresh', ctrlWrapper(refreshUserSessionController));
 export default router;
