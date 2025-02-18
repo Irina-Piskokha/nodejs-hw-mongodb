@@ -9,6 +9,9 @@ import {
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
 import { parseSortParams } from '../utils/parseSortParams.js';
 import { parseFilterParams } from '../utils/parseFilterParams.js';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { getEnvVar } from '../utils/getEnvVar.js';
 
 export const getContactsController = async (req, res) => {
   const { page, perPage } = parsePaginationParams(req.query);
@@ -51,29 +54,56 @@ export const getContactByIdController = async (req, res, next) => {
 
 export const createContactController = async (req, res) => {
   const userId = req.user._id;
-  const newContact = await createContact(req.body, userId);
+  const photo = req.file;
+
+  let photoUrl;
+
+  if (photo) {
+    if (getEnvVar('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
+  const result = await createContact({ ...req.body, photo: photoUrl }, userId);
 
   res.status(201).json({
     status: 201,
     message: 'Successfully created a contact!',
-    data: newContact,
+    data: result,
   });
 };
 
 export const patchContactController = async (req, res, next) => {
   const userId = req.user._id;
   const { contactId } = req.params;
-  const contact = await patchContact(contactId, userId, req.body);
+  const photo = req.file;
 
-  if (!contact) {
+  let photoUrl;
+
+  if (photo) {
+    if (getEnvVar('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
+  const result = await patchContact(contactId, userId, {
+    ...req.body,
+    photo: photoUrl,
+  });
+
+  if (!result) {
     next(createHttpError(404, 'Contact not found'));
     return;
   }
 
   res.json({
     status: 200,
-    message: 'Successfully patched a contact!',
-    data: contact,
+    message: `Successfully patched a student!`,
+    data: result,
   });
 };
 
